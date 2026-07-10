@@ -16,12 +16,12 @@ const datetime = dayjs(post.datetime).tz(timezone)
 const timeago = datetime.isBefore(dayjs().subtract(1, 'w')) ? datetime.format('HH:mm · ll · ddd') : datetime.fromNow()
 ---
 
-<div class="item" style={{ 'view-transition-name': `post-${post.id}` }}>
+<article class="item" id={`post-${post.id}`} style={{ 'view-transition-name': `post-${post.id}` }}>
   <div class="time-box">
     <div class="dot"></div>
-    <div class="time">
+    <time class="time" datetime={post.datetime}>
       <a href={`${SITE_URL}posts/${post.id}`} title={post.datetime} class="item-link">{timeago}</a>
-    </div>
+    </time>
   </div>
   {post.content.length > 0 && <div class={`text-box content`} set:html={post.content} />}
   {
@@ -36,4 +36,4 @@ const timeago = datetime.isBefore(dayjs().subtract(1, 'w')) ? datetime.format('H
       </div>
     )
   }
-</div>
+</article>

@@ -4,10 +4,12 @@ import '../assets/style.css'
 import '../assets/global.css'
 import { SEO } from 'astro-seo'
 import { getEnv } from '../lib/env'
+import { getSameAs } from '../lib/social'
+import { buildBreadcrumbSchema, buildPostSchema, buildWebSiteSchema, cleanDescription } from '../lib/seo'
 import backToTopIcon from '../assets/back-to-top.svg'
 
 const { SITE_URL } = Astro.locals
-const { channel } = Astro.props
+const { channel, noindex: noindexProp = false, title: titleProp } = Astro.props
 
 const locale = getEnv(import.meta.env, Astro, 'LOCALE')
 
@@ -16,28 +18,83 @@ const canonical = SITE_URL.startsWith('http')
   ? new URL(SITE_URL).origin + Astro.url.pathname
   : Astro.url.origin + Astro.url.pathname
 const origin = new URL(canonical).origin
+const siteBase = `${origin}/`
 const twitter = getEnv(import.meta.env, Astro, 'TWITTER')
+const authorUrl = twitter ? `https://twitter.com/${twitter}` : undefined
+
+// A post detail page sets `channel.seo` to the post itself.
+const isArticle = Boolean(seo?.id && seo?.datetime)
+let datePublished
+if (isArticle) {
+  const parsed = new Date(seo.datetime)
+  if (!Number.isNaN(parsed.getTime())) {
+    datePublished = parsed.toISOString()
+  }
+}
+
+// Clean channel/post description once and reuse it for meta, OG and schema.
+const description = cleanDescription(seo?.text ?? channel?.description)
+
+const jsonLd = [
+  buildWebSiteSchema({
+    siteUrl: siteBase,
+    name: channel?.title,
+    description,
+    locale,
+    sameAs: getSameAs(import.meta.env, Astro),
+    searchUrl: `${origin}/search/result`,
+  }),
+]
+if (isArticle) {
+  jsonLd.push(
+    buildPostSchema({
+      siteUrl: siteBase,
+      postUrl: canonical,
+      headline: seo?.title,
+      articleBody: seo?.text,
+      datePublished,
+      locale,
+    }),
+  )
+  jsonLd.push(
+    buildBreadcrumbSchema({
+      siteUrl: siteBase,
+      siteName: channel?.title,
+      postUrl: canonical,
+      postName: seo?.title,
+    }),
+  )
+}
 
 const seoParams = {
-  title: seo?.title,
-  description: seo?.text ?? channel?.description,
+  title: seo?.title ?? titleProp,
+  description,
   canonical,
-  noindex: getEnv(import.meta.env, Astro, 'NOINDEX'),
+  noindex: noindexProp || getEnv(import.meta.env, Astro, 'NOINDEX'),
   nofollow: getEnv(import.meta.env, Astro, 'NOFOLLOW'),
   openGraph: {
     basic: {
-      type: 'website',
+      type: isArticle ? 'article' : 'website',
       title: channel?.title ?? '',
       url: canonical,
       image: channel?.avatar ? channel.avatar : origin + '/favicon.ico',
     },
     optional: {
-      description: seo?.text ?? channel?.description,
-      locale: getEnv(import.meta.env, Astro, 'LOCALE'),
+      description,
+      locale,
     },
+    ...(isArticle
+      ? {
+          article: {
+            publishedTime: datePublished,
+            authors: authorUrl ? [authorUrl] : undefined,
+          },
+        }
+      : {}),
   },
   extend: {
     link: [{ rel: 'icon', href: channel?.avatar ? channel?.avatar : '/favicon.svg' }],
+    meta: [...(channel?.title ? [{ name: 'author', content: channel.title }] : [])],
   },
 }
 
@@ -59,13 +116,15 @@ const FOOTER_INJECT = getEnv(import.meta.env, Astro, 'FOOTER_INJECT')
     </style>
     <SEO
       titleTemplate={`%s | ${channel?.title}`}
-      titleDefault={[channel?.title, seoParams.description].filter(Boolean).join(' - ')}
+      titleDefault={channel?.title}
       twitter={{
         card: 'summary_large_image',
+        site: twitter ? `@${twitter}` : undefined,
         creator: twitter ? `@${twitter}` : undefined,
       }}
       {...seoParams}
     />
+    {jsonLd.map((schema) => <script type="application/ld+json" set:html={JSON.stringify(schema)} />)}
     <Fragment set:html={HEADER_INJECT} />
   </head>
 
@@ -77,11 +136,11 @@ const FOOTER_INJECT = getEnv(import.meta.env, Astro, 'FOOTER_INJECT')
         </div>
         <div id="aside-container">
           <slot name="aside">
-            <div class="nav">
+            <nav class="nav" aria-label="Site navigation">
               <div class="nav-item">
                 <a href={SITE_URL} title={channel?.title} class={`nav-link current`}>Home</a>
               </div>
-            </div>
+            </nav>
             <input class="search-icon" name="icon" type="checkbox" placeholder="Search" />
             <form class="search-form" action="/search/result" method="get">
               <input type="text" name="q" placeholder="Search" />
