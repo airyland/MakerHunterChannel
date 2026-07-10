@@ -6,6 +6,20 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Present in the DOM for crawlers/assistive tech but not shown visually. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 .site-title {
   view-transition-name: site-title;
   transition: 0.2s ease;

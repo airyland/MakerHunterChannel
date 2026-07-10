@@ -28,7 +28,7 @@ export const prerender = false
   <div slot="header" id="breadcrumb">
     <img
       src={channel?.avatar?.startsWith('http') ? staticProxy + channel?.avatar : voidFile.src}
-      alt={channel?.title}
+      alt={channel?.title ? `${channel.title} logo` : 'Site logo'}
       loading="eager"
       class="breadcrumb-avatar"
     />
@@ -37,5 +37,6 @@ export const prerender = false
         {channel.title}
       </a>
     </div>
+    <h1 class="visually-hidden">{post?.title || channel?.title}</h1>
   </div>
 </List>

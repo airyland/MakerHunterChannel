@@ -1,5 +1,6 @@
 ---
 import { getEnv } from '../lib/env'
+import { getSocialProfiles } from '../lib/social'
 import voidFile from '../assets/void.png'
 import rss from '../assets/rss.svg'
 import podcast from '../assets/podcast.svg'
@@ -14,30 +15,26 @@ const { SITE_URL } = Astro.locals
 const { channel } = Astro.props
 
 const PODCASRT = getEnv(import.meta.env, Astro, 'PODCASRT')
-const TWITTER = getEnv(import.meta.env, Astro, 'TWITTER')
-const GITHUB = getEnv(import.meta.env, Astro, 'GITHUB')
-const TELEGRAM = getEnv(import.meta.env, Astro, 'TELEGRAM')
-const DISCORD = getEnv(import.meta.env, Astro, 'DISCORD')
-const MASTODON = getEnv(import.meta.env, Astro, 'MASTODON')
-const BLUESKY = getEnv(import.meta.env, Astro, 'BLUESKY')
-
 const staticProxy = getEnv(import.meta.env, Astro, 'STATIC_PROXY') ?? '/static/'
+
+const socialProfiles = getSocialProfiles(import.meta.env, Astro)
+const socialIcons = { twitter, github, telegram, discord, mastodon, bluesky }
 ---
 
-<div id="header">
+<header id="header">
   <a href={SITE_URL} title={channel?.title}>
     <img
       src={channel?.avatar?.startsWith('http') ? staticProxy + channel?.avatar : voidFile.src}
-      alt={channel?.title}
+      alt={channel?.title ? `${channel.title} logo` : 'Site logo'}
       loading="eager"
       class="header-avatar"
     />
   </a>
-  <div class="header-title">
+  <h1 class="header-title">
     <a href={SITE_URL} class="site-title" title={channel?.title}>
       {channel?.title}
     </a>
-  </div>
+  </h1>
   <div class="header-icons">
     <a href={`${SITE_URL}rss.xml`} target="_blank" rel="alternate" type="application/rss+xml" title="RSS Feed">
       <img {...rss} alt="RSS" class="social-icon" width="1em" />
@@ -52,54 +49,14 @@ const staticProxy = getEnv(import.meta.env, Astro, 'STATIC_PROXY') ?? '/static/'
     }
 
     {
-      TWITTER && TWITTER.length > 0 && (
-        <a href={`https://twitter.com/${TWITTER}`} title="Twitter" target="_blank">
-          <img {...twitter} alt={`twitter.com/${TWITTER}`} class="social-icon" width="1em" />
+      socialProfiles.map((profile) => (
+        <a href={profile.url} title={profile.title} target="_blank" rel="noopener">
+          <img {...socialIcons[profile.key]} alt={profile.label} class="social-icon" width="1em" />
         </a>
-      )
-    }
-
-    {
-      GITHUB && GITHUB.length > 0 && (
-        <a href={`https://github.com/${GITHUB}`} title="GitHub" target="_blank">
-          <img {...github} alt={`github.com/${GITHUB}`} class="social-icon" width="1em" />
-        </a>
-      )
-    }
-
-    {
-      TELEGRAM && TELEGRAM.length > 0 && (
-        <a href={`https://t.me/${TELEGRAM}`} title="Telegram" target="_blank">
-          <img {...telegram} alt={`t.me/${TELEGRAM}`} class="social-icon" width="1em" />
-        </a>
-      )
-    }
-
-    {
-      DISCORD && DISCORD.length > 0 && (
-        <a href={DISCORD} title="Discord" target="_blank">
-          <img {...discord} alt="Discord Invite" class="social-icon" width="1em" />
-        </a>
-      )
-    }
-
-    {
-      MASTODON && MASTODON.length > 0 && (
-        <a href={`https://${MASTODON}`} title="Mastodon" target="_blank">
-          <img {...mastodon} alt={`@${MASTODON}`} class="social-icon" width="1em" />
-        </a>
-      )
-    }
-
-    {
-      BLUESKY && BLUESKY.length > 0 && (
-        <a href={`https://bsky.app/profile/${BLUESKY}`} title="BlueSky" target="_blank">
-          <img {...bluesky} alt={`@${BLUESKY}`} class="social-icon" width="1em" />
-        </a>
-      )
+      ))
     }
   </div>
-</div>
+</header>
 
 {
   channel?.descriptionHTML && channel?.descriptionHTML.length > 0 && (
@@ -108,6 +65,13 @@ const staticProxy = getEnv(import.meta.env, Astro, 'STATIC_PROXY') ?? '/static/'
 }
 
 <style>
+  /* Keep the semantic <h1> visually identical to the previous <div>. */
+  .header-title {
+    margin: 0;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
   #site-intro {
     color: var(--secondary-color);
     background-color: var(--code-background-color);

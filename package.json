@@ -12,7 +12,7 @@
     "astro": "astro",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "postinstall": "test -d .git && simple-git-hooks || true"
+    "postinstall": "git rev-parse --git-dir > /dev/null 2>&1 && simple-git-hooks || true"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.7",

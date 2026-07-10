@@ -9,4 +9,4 @@ const channel = await getChannelInfo(Astro, {
 export const prerender = false
 ---
 
-<List channel={channel} />
+<List channel={channel} noindex title={`Newer posts after #${Astro.params.cursor}`} />

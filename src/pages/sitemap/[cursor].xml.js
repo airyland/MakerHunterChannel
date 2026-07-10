@@ -10,7 +10,21 @@ export async function GET(Astro) {
   })
   const posts = channel.posts || []
 
-  const xmlUrls = posts.map(post => `
+  // The sitemap index names its first shard after the latest post id.
+  // Include the homepage on that first shard so `/` is covered exactly once.
+  const latest = await getChannelInfo(Astro)
+  const latestPost = latest.posts?.[0]
+  const isFirstShard = latestPost && +Astro.params.cursor === +latestPost.id
+  const homeUrl = isFirstShard
+    ? `
+    <url>
+      <loc>${url.origin}/</loc>
+      <lastmod>${new Date(latestPost.datetime).toISOString()}</lastmod>
+    </url>
+  `
+    : ''
+
+  const xmlUrls = homeUrl + posts.map(post => `
     <url>
       <loc>${url.origin}/posts/${post.id}</loc>
       <lastmod>${new Date(post.datetime).toISOString()}</lastmod>
